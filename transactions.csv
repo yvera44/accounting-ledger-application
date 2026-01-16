@@ -1001,3 +1001,9 @@ date|time|description|vendor|amount
 2025-05-22|02:46:02|internet bill|Mark Thompson|1516.47
 2025-10-16|15:01:42|phone|yair |1222.0
 2025-10-16|15:03:00|phone|bob|-90.0
+2025-10-17|12:48:23|gpu|nvidia|500.0
+2025-10-17|12:48:46|gpu|nvidia|-300.0
+2025-10-17|13:00:32|gpu|nvidia|-560.0
+2025-11-08|22:53:52|Phone|Esmeralda|129.0
+2026-01-16|09:20:46|Watch|Casio|123.0
+2026-01-16|12:27:41|soda|pepsi|124.0

@@ -1,8 +1,10 @@
 package com.pluralsight;
 
-import java.io.BufferedReader;
+import com.pluralsight.data.Transaction;
+import com.pluralsight.ui.UserInterface;
+
+
 import java.io.*;
-import java.io.FileReader;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -11,13 +13,14 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 
 public class Application {
+
     private static final Scanner scanner = new Scanner(System.in);
-    static ArrayList<Transaction> transactions = readTransactions(); //empty basket
+    private static final UserInterface userInterface = new UserInterface(scanner);
+    static ArrayList<Transaction> transactions = readTransactions();
 
     public static void main(String[] args) {
-
-            runMainMenu();
-            scanner.close();
+        runMainMenu();
+        scanner.close();
     }
 
     // Main menu loop
@@ -25,9 +28,8 @@ public class Application {
         boolean running = true;
 
         while (running) {
-            displayMenu();
-            System.out.print("Choose an option: ");
-            String choice = scanner.nextLine().trim().toUpperCase(); // normalize input
+            userInterface.displayMainMenu();
+            String choice = userInterface.getUserInput("Choose an option: ");
 
             switch (choice) {
                 case "D":
@@ -39,55 +41,38 @@ public class Application {
                 case "L":
                     runLedger();
                     break;
-                case"X":
-                    System.out.println("Exiting.... Goodbye!");
+                case "X":
+                    userInterface.displayExitMessage();
                     running = false;
                     break;
                 default:
-                    System.out.println("Invalid choice. Please try again.");
+                    userInterface.displayInvalidChoice();
             }
 
-            System.out.println(); // blank line for spacing
-
+            userInterface.displayBlankLine();
         }
     }
 
-    // Display menu
-    public static void displayMenu() {
-        System.out.println("""
-                ======= Main Menu =======
-                (D) Add Deposit
-                (P) Make Payment (Debit)
-                (L) Display Ledger Screen
-                (X) Exit""");
-    }
-
-    public static void addDeposit(){
-
+    public static void addDeposit() {
         try {
-            System.out.print("Add deposit amount: ");
-
-            // create a FileWriter
             FileWriter fileWriter = new FileWriter("transactions.csv", true);
-            // create a BufferedWriter
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 
             double userDepositAmount;
             Transaction transaction;
             try {
-                userDepositAmount = scanner.nextDouble();
-                scanner.nextLine();
-                System.out.print("Enter description ");
-                String userDescription = scanner.nextLine();
-                System.out.print("Enter vendor ");
-                String userToVendor = scanner.nextLine();
-                transaction = new Transaction(LocalDate.now(),
+                userDepositAmount = userInterface.getDoubleInput("Add deposit amount: ");
+                String userDescription = userInterface.getStringInput("Enter description: ");
+                String userToVendor = userInterface.getStringInput("Enter vendor: ");
+
+                transaction = new Transaction(
+                        LocalDate.now(),
                         LocalTime.now(),
                         userDescription,
                         userToVendor,
                         userDepositAmount
                 );
-                System.out.println("\nDeposit made. Thank you!");
+                userInterface.displayDepositSuccess();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -97,38 +82,31 @@ public class Application {
             bufferedWriter.close();
             transactions.add(transaction);
         } catch (IOException e) {
-            System.out.println("ERROR: An unexpected error occurred");
-            e.getStackTrace();
+            userInterface.displayError("An unexpected error occurred");
+            e.printStackTrace();
         }
     }
 
     private static void makePayment() {
-
         try {
-            System.out.print("Add payment amount: ");
-
-            // create a FileWriter
             FileWriter fileWriter = new FileWriter("transactions.csv", true);
-            // create a BufferedWriter
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 
             double userPaymentAmount;
             Transaction transaction;
             try {
-                userPaymentAmount = scanner.nextDouble();
-                scanner.nextLine();
-                System.out.print("Enter description ");
-                String userDescription = scanner.nextLine();
-                System.out.print("Enter vendor ");
-                String userToVendor = scanner.nextLine();
-                transaction = new Transaction(LocalDate.now(),
+                userPaymentAmount = userInterface.getDoubleInput("Add payment amount: ");
+                String userDescription = userInterface.getStringInput("Enter description: ");
+                String userToVendor = userInterface.getStringInput("Enter vendor: ");
+
+                transaction = new Transaction(
+                        LocalDate.now(),
                         LocalTime.now(),
                         userDescription,
                         userToVendor,
                         -userPaymentAmount
                 );
-                System.out.println("\nPayment received. Thank you!");
-
+                userInterface.displayPaymentSuccess();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -138,8 +116,8 @@ public class Application {
             bufferedWriter.close();
             transactions.add(transaction);
         } catch (IOException e) {
-            System.out.println("ERROR: An unexpected error occurred");
-            e.getStackTrace();
+            userInterface.displayError("An unexpected error occurred");
+            e.printStackTrace();
         }
     }
 
@@ -148,9 +126,8 @@ public class Application {
         boolean running = true;
 
         while (running) {
-            displayLedger();
-            System.out.print("Choose an option: ");
-            String choice = scanner.nextLine().trim().toUpperCase(); // normalize input
+            userInterface.displayLedgerMenu();
+            String choice = userInterface.getUserInput("Choose an option: ");
 
             switch (choice) {
                 case "A":
@@ -166,67 +143,49 @@ public class Application {
                     runReports();
                     break;
                 case "H":
-                    System.out.println("Returning to Home Screen....");
+                    userInterface.displayReturningToHome();
                     running = false;
-
                     break;
                 default:
-                    System.out.println("Invalid choice. Please try again.");
+                    userInterface.displayInvalidChoice();
             }
 
-            System.out.println(); // blank line for spacing
+            userInterface.displayBlankLine();
         }
     }
 
-    public static void displayLedger() {
-        System.out.println("""
-                ========= Ledger =========
-                (A) Display All Entries
-                (D) Display deposits
-                (P) Display payments
-                (R) Reports
-                (H) Home Page""");
-    }
-
-    // Menu actions
     // Display All Entries
     public static void displayAllEntries() {
-
         for (Transaction transaction : transactions) {
-            System.out.println(transaction);
-
+            userInterface.displayTransaction(transaction);
         }
     }
+
     // Display Deposits
     public static void displayDeposits() {
-        System.out.println(transactions);
-
         for (Transaction transaction : transactions) {
             if (transaction.getAmount() >= 0) {
-                System.out.println(transaction);
-
+                userInterface.displayTransaction(transaction);
             }
-
         }
     }
+
     // Display Payments
     public static void displayPayments() {
-
         for (Transaction transaction : transactions) {
             if (transaction.getAmount() < 0) {
-                System.out.println(transaction);
-
+                userInterface.displayTransaction(transaction);
             }
         }
     }
+
     // Open Reports Menu
     public static void runReports() {
         boolean running = true;
 
         while (running) {
-            displayReports();
-            System.out.print("Choose an option: ");
-            String choice = scanner.nextLine().trim().toUpperCase();
+            userInterface.displayReportsMenu();
+            String choice = userInterface.getUserInput("Choose an option: ");
 
             switch (choice) {
                 case "1":
@@ -235,128 +194,112 @@ public class Application {
                 case "2":
                     displayPreviousMonth();
                     break;
-                case"3":
+                case "3":
                     displayYearToDate();
                     break;
-                case"4":
+                case "4":
                     displayPreviousYear();
                     break;
-                case"5":
+                case "5":
                     displayByVendor();
                     break;
-                case"0":
-                    System.out.println("Returning to Ledger Screen....");
-                    runLedger();
-                case "H":
-                    System.out.println("Exiting to Home Screen..... ");
+                case "0":
+                    userInterface.displayReturningToLedger();
                     running = false;
-                    runMainMenu();
+                    break;
+                case "H":
+                    userInterface.displayExitingToHome();
+                    running = false;
                     break;
                 default:
-                    System.out.println("Invalid choice. Please try again.");
+                    userInterface.displayInvalidChoice();
             }
 
-            System.out.println(); // blank line for spacing
+            userInterface.displayBlankLine();
         }
     }
-    public static void displayReports() {
-        System.out.println("""
-                ============== Reports ==============
-                (1) Display by Month to Date
-                (2) Display Previous Month
-                (3) Display Year to Date
-                (4) Display Previous Year
-                (5) Display by Vendor
-                (0) Return to Ledger
-                (H) Exit to Home Screen""");
 
-    }
     // Report options
-    public static void displayMonthToDate(){
-
+    public static void displayMonthToDate() {
         LocalDate currentDate = LocalDate.now();
         LocalDate startDate = currentDate.withDayOfMonth(1);
 
-        for (Transaction transaction : transactions){
-            if (transaction.getTransactionDate().isAfter(startDate)){
-                System.out.println(transaction);
+        for (Transaction transaction : transactions) {
+            if (transaction.getTransactionDate().isAfter(startDate)) {
+                userInterface.displayTransaction(transaction);
             }
         }
-        System.out.println("===========================================");
+        userInterface.displaySeparator();
     }
-    public static void displayPreviousMonth(){
 
+    public static void displayPreviousMonth() {
         LocalDate lastMonth = LocalDate.now().minusMonths(1);
         int previousMonth = lastMonth.getMonthValue();
         int currentYear = lastMonth.getYear();
 
-        for (Transaction transaction : transactions){
-            if (transaction.getTransactionDate().getMonthValue() == previousMonth && transaction.getTransactionDate().getYear() == currentYear){
-                System.out.println(transaction);
+        for (Transaction transaction : transactions) {
+            if (transaction.getTransactionDate().getMonthValue() == previousMonth
+                    && transaction.getTransactionDate().getYear() == currentYear) {
+                userInterface.displayTransaction(transaction);
             }
         }
-        System.out.println("===========================================");
+        userInterface.displaySeparator();
     }
-    public static void displayYearToDate(){
 
+    public static void displayYearToDate() {
         int currentYear = LocalDate.now().getYear();
 
-        for (Transaction transaction : transactions){
+        for (Transaction transaction : transactions) {
             if (transaction.getTransactionDate().getYear() == currentYear) {
-                System.out.println(transaction);
+                userInterface.displayTransaction(transaction);
             }
         }
-        System.out.println("===========================================");
+        userInterface.displaySeparator();
     }
-    public static void displayPreviousYear(){
 
-        LocalDate  currentYear = LocalDate.now();
+    public static void displayPreviousYear() {
+        LocalDate currentYear = LocalDate.now();
         LocalDate oneYearAgo = currentYear.minusYears(1);
         int previousYear = oneYearAgo.getYear();
 
-        for (Transaction transaction : transactions){
-            if (transaction.getTransactionDate().getYear() == previousYear){
-                System.out.println(transaction);
+        for (Transaction transaction : transactions) {
+            if (transaction.getTransactionDate().getYear() == previousYear) {
+                userInterface.displayTransaction(transaction);
             }
         }
-        System.out.println("===========================================");
+        userInterface.displaySeparator();
     }
-    public static void displayByVendor(){
 
-        System.out.println("Enter vendor name: ");
-        String searchVendor = scanner.nextLine().trim();
-
+    public static void displayByVendor() {
+        String searchVendor = userInterface.getStringInput("Enter vendor name: ");
         boolean found = false;
 
         for (Transaction transaction : transactions) {
             if (transaction.getVendor().equalsIgnoreCase(searchVendor)) {
-                System.out.println(transaction);
+                userInterface.displayTransaction(transaction);
                 found = true;
             }
         }
+
         if (!found) {
-            System.out.println("Vendor not found. Please try again. ");
+            userInterface.displayVendorNotFound();
         }
     }
-
 
     private static ArrayList<Transaction> readTransactions() {
         ArrayList<Transaction> transactions = new ArrayList<>();
 
         try {
-
             FileReader fileReader = new FileReader("transactions.csv");
-
             BufferedReader bufferedReader = new BufferedReader(fileReader);
             String line;
 
             bufferedReader.readLine();
 
             while ((line = bufferedReader.readLine()) != null) {
-
                 String[] parts = line.split(Pattern.quote("|"));
 
-                if(parts.length != 5) continue;
+                if (parts.length != 5) continue;
 
                 Transaction transaction = new Transaction();
 
@@ -379,19 +322,12 @@ public class Application {
                 String amountAsString = parts[4];
                 double amount = Double.parseDouble(amountAsString);
                 transaction.setAmount(amount);
-                transactions.add(transaction); //adds transactions to basket
-
+                transactions.add(transaction);
             }
             bufferedReader.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
         return transactions;
-
     }
 }
-
-
-
-
-
